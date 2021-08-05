@@ -28,6 +28,7 @@ password = input()
 encodedUserAndPass = "{}:{}".format(username, password).encode("ascii")
 userAndPass = b64encode(encodedUserAndPass).decode("ascii")
 headers = {'Authorization':'Basic '+ userAndPass, 'Content-type':'application/json', 'Accept':'application/json' }
+print()
 
 # Get name and public API of this device
 pc_name = socket.gethostname()
@@ -35,9 +36,9 @@ public_ip = get('https://api.ipify.org').text
 
 def is_API_reachable():
     connection = HTTPConnection(baseurl, port)
-    connection.request("GET", "/")
+    connection.request("GET", "/api/V1/", headers=headers)
     r = connection.getresponse()
-    print(r.status, r.reason)
+    print("API reachable: ", r.status, r.reason)
     connection.close()
     return r.status is 200
 
@@ -48,18 +49,16 @@ def send_to_API(ser_bytes):
     print(json_data)
     
     # Then connect
-    conn.request('POST', '/api/V1/ais/', json_data, headers)
+    conn.request('POST', '/api/V1/ais/', json_data, headers=headers)
 
     #Get response back
     res = conn.getresponse()
     data = res.read()
-    print(res.status, res.reason)
+    print("Status: ", res.status, res.reason)
 
 def decode_AIS(ser_bytes):
     try:
         msg = decode_msg(ser_bytes)
-        #for i in msg:
-            #print(i, msg[i])
         return msg
     except:
         print("Unexpected error while decoding AIS:", sys.exc_info())
@@ -75,6 +74,7 @@ def decode_binary_string(s, bit=6):
 
 def print_ais_message_data(decoded_msg, keys):
     if decoded_msg:
+        print("----------")
         for i in decoded_msg:
             for key in keys:
                 if str(i) is key:
@@ -85,6 +85,7 @@ def print_ais_message_data(decoded_msg, keys):
                         print('6bit:', otherres)
                         otherres = decode_binary_string(stripped, 8)
                         print('8bit:', otherres)
+        print("----------")
 
 
 keep_running = True
@@ -112,10 +113,14 @@ while keep_running:
         ser_bytes = ser.readline().decode("UTF-8").replace('\r\n', '')
         print(ser_bytes)
         decoded_msg = decode_AIS(ser_bytes)
-        print_ais_message_data(decoded_msg, ['data'])
+        print_ais_message_data(decoded_msg, ['type', 'fid', 'data'])
         
         if is_API_reachable():
             send_to_API(ser_bytes)
+        else:
+            print("API offline or login is false")
+            keep_running = False
+
         print('================================================')
 
 conn.close()
