@@ -18,8 +18,6 @@ ser.flushInput()
 baseurl = 'driel.rh.nl'
 port = 65533
 conn = HTTPConnection(baseurl, port, timeout=10)
-username = 'daniel'
-password = 'geerts'
 # Encode AUTH as Base64 and then decode it to ascii as python stores it as a byte string
 print("Please enter webapp API username:")
 username = input()
@@ -113,7 +111,7 @@ while keep_running:
         ser_bytes = ser.readline().decode("UTF-8").replace('\r\n', '')
         print(ser_bytes)
         decoded_msg = decode_AIS(ser_bytes)
-        print_ais_message_data(decoded_msg, ['type', 'fid', 'data'])
+        print_ais_message_data(decoded_msg, ['type', 'mmsi', 'fid', 'data'])
         
         if is_API_reachable():
             send_to_API(ser_bytes)
